@@ -3,6 +3,7 @@
 import { useEffect, useRef} from "react"
 import * as THREE from "three"
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { Sky, Water } from "three/examples/jsm/Addons.js";
 
 class Tile extends THREE.Mesh{
     _active: boolean;
@@ -17,18 +18,6 @@ class Tile extends THREE.Mesh{
         
         this.position.set(this._cubeSize+1,this._cubeSize/2,0)
     }
-    set cubeSize(newsize:number){
-        this._cubeSize=newsize
-
-        this.geometry.dispose()
-        this.geometry = new THREE.BoxGeometry(this._cubeSize,this._cubeSize,this._cubeSize)
-        this.position.set(this._cubeSize+1,this._cubeSize/2,0)
-    
-    }
-    onClick(e:any){
-        this._active=!this._active;
-        this.scale.setScalar(this._cubeSize * (this._active ? 1.5 : 1))
-    }
 }
 
 export default function Scene(){
@@ -42,7 +31,7 @@ export default function Scene(){
 
         const camera =new THREE.PerspectiveCamera(75,mountRef.current.offsetWidth/mountRef.current.offsetHeight,0.1,1000);
 
-
+        const sun = new THREE.Vector3();
         
         // render 
 
@@ -51,38 +40,10 @@ export default function Scene(){
         render.setAnimationLoop(animate)
         mountRef.current.appendChild(render.domElement)
 
-
-        // texture creating
-        const planesize= 400
-        
-        const texturloader=new THREE.TextureLoader()
-        const texture=texturloader.load('/checker.png')
-        texture.wrapS=THREE.RepeatWrapping
-        texture.wrapT=THREE.RepeatWrapping
-        texture.magFilter=THREE.NearestFilter
-        texture.colorSpace=THREE.SRGBColorSpace
-        texture.repeat.set(planesize/2,planesize/2)
-
-        const planeGeo=new THREE.PlaneGeometry(planesize,planesize)
-        const planeMat=new THREE.MeshPhongMaterial({
-            map: texture,
-            side:THREE.DoubleSide
-        })
-
-        const planeMesh=new THREE.Mesh(planeGeo,planeMat)
-        planeMesh.rotation.x=Math.PI * -.5;
-        scene.add(planeMesh)
-        
-        
-        // light 
-        const light = new THREE.DirectionalLight(0xffffff, 1);
-        light.position.set(2, 2, 5);
-        scene.add(light);
-
         
         const control = new OrbitControls(camera,render.domElement)
 
-        camera.position.set(5,5,5)
+        camera.position.set(0,5,20)
         control.update()
 
         const cellSize=1
@@ -99,13 +60,13 @@ export default function Scene(){
         const edgeGeometry=new THREE.EdgesGeometry(geometryTile)
         for(let x=0; x<Gridsize;x++){
             for(let y=0;y<Gridsize;y++){
-                const material =new THREE.MeshStandardMaterial({color:"white"})
+                const material =new THREE.MeshStandardMaterial({color:"white",transparent:true,opacity:0.5})
 
                 const tile=new THREE.Mesh(geometryTile,material)
                 const wireFrame=new THREE.LineSegments(edgeGeometry,material)
 
-                tile.position.set(x-Gridsize/2,y-Gridsize/2,0)
-                wireFrame.position.set(x-Gridsize/2,y-Gridsize/2,0)
+                tile.position.set(x-Gridsize/2,y-Gridsize/2,-0.1)
+                wireFrame.position.set(x-Gridsize/2,y-Gridsize/2,-0.1)
 
                 tile.rotation.x=Math.PI*.5
                 wireFrame.rotation.x=Math.PI*.5
@@ -115,6 +76,64 @@ export default function Scene(){
                 
             }
         }
+
+
+        const waterGeometry = new THREE.PlaneGeometry( 10000, 10000 );
+
+		const water = new Water(waterGeometry,
+		{
+        	textureWidth: 512,
+			textureHeight: 512,
+			waterNormals: new THREE.TextureLoader().load( '/waternormals.jpg', function ( texture ) {
+				texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
+			} ),
+			sunDirection: new THREE.Vector3(),
+			sunColor: 0xffffff,
+			waterColor: 0x001e0f,
+			distortionScale: 3.7,
+			fog: scene.fog !== undefined
+		});
+
+		water.rotation.x = - Math.PI / 2;
+		scene.add( water );
+
+        const sky = new Sky();
+		sky.scale.setScalar( 10000 );
+		scene.add( sky );
+
+        const parameters = {
+            elevation: 2,
+            azimuth: -180,
+        };
+
+		const pmremGenerator = new THREE.PMREMGenerator( render );
+		const sceneEnv = new THREE.Scene();
+
+		let renderTarget:any;
+
+        
+        water.material.uniforms['size'].value=5
+		function updateSun() {
+
+		    const phi = THREE.MathUtils.degToRad( 90 - parameters.elevation );
+			const theta = THREE.MathUtils.degToRad( parameters.azimuth );
+
+			sun.setFromSphericalCoords( 1, phi, theta );
+
+			sky.material.uniforms[ 'sunPosition' ].value.copy( sun );
+			water.material.uniforms[ 'sunDirection' ].value.copy( sun ).normalize();
+
+			if ( renderTarget !== undefined ) renderTarget.dispose();
+
+			    sceneEnv.add( sky );
+				renderTarget = pmremGenerator.fromScene( sceneEnv );
+				scene.add( sky );
+
+				scene.environment = renderTarget.texture;
+
+			}
+
+			updateSun();
 
 
 
@@ -142,6 +161,7 @@ export default function Scene(){
         function animate(){;
             
             control.update()
+            water.material.uniforms[ 'time' ].value += 1.0 / 600.0;
             render.render(scene,camera);
         }
         animate()
