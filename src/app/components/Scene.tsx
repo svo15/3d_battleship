@@ -4,6 +4,7 @@ import { useEffect, useRef} from "react"
 import * as THREE from "three"
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { Sky, Water } from "three/examples/jsm/Addons.js";
+import { Grid } from "./classes";
 
 
 export default function Scene(){
@@ -33,37 +34,9 @@ export default function Scene(){
 
        
 
-
-
-        const gridGroup=new THREE.Group()
-        gridGroup.rotation.x=Math.PI*0.5
-        scene.add(gridGroup) 
-        
-        const cellSize=1
-        const Gridsize=14
-        const cells:any=[]
-
-        const geometryTile=new THREE.BoxGeometry(cellSize,0.001)
-        const edgeGeometry=new THREE.EdgesGeometry(geometryTile)
-        for(let x=0; x<Gridsize;x++){
-            for(let y=0;y<Gridsize;y++){
-                const material =new THREE.MeshStandardMaterial({color:"white",transparent:true,opacity:0.5})
-
-                const tile=new THREE.Mesh(geometryTile,material)
-                const wireFrame=new THREE.LineSegments(edgeGeometry,material)
-
-                tile.position.set(x-Gridsize/2,y-Gridsize/2,-0.1)
-                wireFrame.position.set(x-Gridsize/2,y-Gridsize/2,-0.1)
-
-                tile.rotation.x=Math.PI*.5
-                wireFrame.rotation.x=Math.PI*.5
-                gridGroup.add(wireFrame)
-                gridGroup.add(tile)
-                cells.push(tile)
-                
-            }
-        }
-
+        const grid=new Grid(scene)
+        grid.gridGroup.rotation.x=Math.PI*0.5
+        scene.add(grid.gridGroup)
 
         const waterGeometry = new THREE.PlaneGeometry( 10000, 10000 );
 
@@ -105,7 +78,7 @@ export default function Scene(){
 		    const phi = THREE.MathUtils.degToRad( 90 - parameters.elevation );
 			const theta = THREE.MathUtils.degToRad( parameters.azimuth );
 
-			sun.setFromSphericalCoords( 1, phi, theta );
+			sun.setFromSphericalCoords( 10, phi, theta );
 
 			sky.material.uniforms[ 'sunPosition' ].value.copy( sun );
 			water.material.uniforms[ 'sunDirection' ].value.copy( sun ).normalize();
@@ -120,7 +93,6 @@ export default function Scene(){
 
 			}
 
-			updateSun();
 
 
 
@@ -133,7 +105,7 @@ export default function Scene(){
             mouse.y=-(event.clientY/window.innerHeight)*2+1
 
             raycaster.setFromCamera(mouse,camera)
-            const insersects=raycaster.intersectObjects(cells)
+            const insersects=raycaster.intersectObjects(grid.cells)
 
             if (insersects.length>0) {
                 
@@ -149,6 +121,8 @@ export default function Scene(){
             
             control.update()
             water.material.uniforms[ 'time' ].value += 1.0 / 600.0;
+            updateSun();
+            parameters.azimuth+=1.0/60.0
             render.render(scene,camera);
         }
         animate()
