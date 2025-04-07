@@ -13,6 +13,7 @@ export class Grid{
         this.cells=[]
         this.gridGroup=new THREE.Group()
         this.initGrid();
+        this.gridGroup.userData.grid=true
         this.scene.add(this.gridGroup)
 
     }
@@ -28,6 +29,9 @@ export class Grid{
 
                 tile.position.set(x-this.Gridsize/2,y-this.Gridsize/2,-0.1)
                 wireFrame.position.set(x-this.Gridsize/2,y-this.Gridsize/2,-0.1)
+
+                tile.userData.draggable=false
+                wireFrame.userData.draggable=false
 
                 tile.rotation.x=Math.PI*.5
                 wireFrame.rotation.x=Math.PI*.5

@@ -9,35 +9,12 @@ import { Grid } from "./classes";
 
 export default function Scene(){
     const mountRef = useRef<any>(null)
-    useEffect(() => {
-        // scene
-        const scene = new THREE.Scene();
-        // scene.background=new THREE.Color(0xffffff)
 
-        // perspective camera
+    const scene = new THREE.Scene();
 
-        const camera =new THREE.PerspectiveCamera(75,mountRef.current.offsetWidth/mountRef.current.offsetHeight,0.1,1000);
-
-        const sun = new THREE.Vector3();
-        
-        // render 
-
-        const render =new THREE.WebGLRenderer();
-        render.setSize(mountRef.current.offsetWidth,mountRef.current.offsetHeight);
-        render.setAnimationLoop(animate)
-        mountRef.current.appendChild(render.domElement)
-
-        
-        const control = new OrbitControls(camera,render.domElement)
-        camera.position.set(0,5,20)
-        control.update()
-
-       
-
-        const grid=new Grid(scene)
-        grid.gridGroup.rotation.x=Math.PI*0.5
-        scene.add(grid.gridGroup)
-
+    const sun = new THREE.Vector3()
+    
+    function WaterAndSky(){
         const waterGeometry = new THREE.PlaneGeometry( 10000, 10000 );
 
 		const water = new Water(waterGeometry,
@@ -55,12 +32,74 @@ export default function Scene(){
 		});
 
 		water.rotation.x = - Math.PI / 2;
+        water.userData.water=true
 		scene.add( water );
 
         const sky = new Sky();
 		sky.scale.setScalar( 10000 );
 		scene.add( sky );
+    }
 
+    useEffect(() => {
+
+        // perspective camera
+
+        const camera =new THREE.PerspectiveCamera(75,mountRef.current.offsetWidth/mountRef.current.offsetHeight,0.1,1000);
+        
+        // render 
+        const render =new THREE.WebGLRenderer();
+        
+        render.setSize(mountRef.current.offsetWidth,mountRef.current.offsetHeight);
+        render.setAnimationLoop(animate)
+        mountRef.current.appendChild(render.domElement)
+
+        
+        const control = new OrbitControls(camera,render.domElement)
+        camera.position.set(0,5,20)
+        control.update()
+
+        const grid=new Grid(scene)
+        grid.gridGroup.rotation.x=Math.PI*0.5
+        scene.add(grid.gridGroup)
+
+        
+        function createWater(){
+                const waterGeometry = new THREE.PlaneGeometry( 10000, 10000 );            
+                const water = new Water(waterGeometry,
+                {
+                    textureWidth: 512,
+                    textureHeight: 512,
+                    waterNormals: new THREE.TextureLoader().load( '/waternormals.jpg', function ( texture ) {
+                        texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
+                    } ),
+                    sunDirection: new THREE.Vector3(),
+                    sunColor: 0xffffff,
+                    waterColor: 0x001e0f,
+                    distortionScale: 3.7,
+                    fog: scene.fog !== undefined
+                });
+        
+                water.rotation.x = - Math.PI / 2;
+                water.userData.water=true
+                water.material.uniforms['size'].value=5
+                scene.add( water );
+                
+                return water;
+        }
+        function createSky(){
+            const sky = new Sky();
+		    sky.scale.setScalar( 10000 );
+		    scene.add( sky );
+
+            return sky;
+        }
+
+
+		const water = createWater()
+        const sky=createSky()
+
+		
+        
         const parameters = {
             elevation: 2,
             azimuth: -180,
@@ -72,7 +111,7 @@ export default function Scene(){
 		let renderTarget:any;
 
         
-        water.material.uniforms['size'].value=5
+        
 		function updateSun() {
 
 		    const phi = THREE.MathUtils.degToRad( 90 - parameters.elevation );
@@ -91,38 +130,77 @@ export default function Scene(){
 
 				scene.environment = renderTarget.texture;
 
-			}
+		}
 
+        const size=1
+        const geometry= new THREE.BoxGeometry(size,size,size)
+        const material= new THREE.MeshBasicMaterial({color:"white"})
+        const box =new THREE.Mesh(geometry,material)
+        box.userData.draggable=true
+        box.position.set(size,size/2+0.5,0)
+        scene.add(box)
 
+        
 
 
         const raycaster = new THREE.Raycaster()
-        const mouse = new THREE.Vector2() 
+        const Mouse = new THREE.Vector2() 
 
-        const onClick=(event:MouseEvent)=>{
+        const MoveMouse=new THREE.Vector2
 
-            mouse.x=(event.clientX/window.innerWidth)*2-1
-            mouse.y=-(event.clientY/window.innerHeight)*2+1
-
-            raycaster.setFromCamera(mouse,camera)
-            const insersects=raycaster.intersectObjects(grid.cells)
-
-            if (insersects.length>0) {
+        let draggable:THREE.Object3D
+        
+        window.addEventListener("click",event=>{
+            if (draggable) {
+                console.log(draggable.position)
+                draggable=null as any
                 
-                console.log(insersects[0].object.position)
-                
+                return;
             }
+            Mouse.x=(event.clientX/window.innerWidth)*2-1
+            Mouse.y=-(event.clientY/window.innerHeight)*2+1
+            
+            raycaster.setFromCamera(Mouse,camera)
+            const insersects=raycaster.intersectObjects(scene.children)
 
+            if (insersects.length>0&&insersects[0].object.userData.draggable) {
+                draggable=insersects[0].object
+                console.log(insersects[0].object.position)
+            }
+            
+
+        })
+        
+        window.addEventListener('mousemove',event=>{
+            
+            MoveMouse.x=(event.clientX/window.innerWidth)*2-1
+            MoveMouse.y=-(event.clientY/window.innerHeight)*2+1
+        })
+        function objectMove(){
+            if (draggable!=null) {
+                raycaster.setFromCamera(MoveMouse,camera)
+                const intersect =raycaster.intersectObjects(scene.children)
+                if (intersect.length>0) {
+                    for(let o of intersect){
+                        if (o.object.userData.water) {
+                            draggable.position.x=o.point.x
+                            draggable.position.z=o.point.z 
+                        }
+                        
+                    }
+                }
+            }
+            
         }
-        render.domElement.addEventListener("click",onClick)
 
 
         function animate(){;
             
             control.update()
             water.material.uniforms[ 'time' ].value += 1.0 / 600.0;
+            objectMove()
             updateSun();
-            parameters.azimuth+=1.0/60.0
+            parameters.azimuth+=10.0/60.0
             render.render(scene,camera);
         }
         animate()
@@ -142,5 +220,5 @@ export default function Scene(){
     }, [])
     
 
-    return <div  ref={mountRef} className="w-full h-full rounded-2xl" ></div>
+    return <div  ref={mountRef} className="w-full h-full" ></div>
 }
