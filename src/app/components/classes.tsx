@@ -44,3 +44,13 @@ export class Grid{
 
     }
 }
+ export class Cube extends THREE.Mesh{
+     constructor(size=1){
+         super();
+         this.geometry=new THREE.BoxGeometry(size,size,size)
+         this.material=new THREE.MeshBasicMaterial({color:"white"})
+         this.position.set(size,size/2+0.5,0)
+         this.userData.draggable=true
+     }
+ }
+ 

@@ -1,0 +1,11 @@
+Model Information:
+* title:	USS Missouri (BB-63) 1991
+* source:	https://sketchfab.com/3d-models/uss-missouri-bb-63-1991-ec23c03e8c4d4e74925117ff88dde598
+* author:	全斗焕 (https://sketchfab.com/lxyun_2)
+
+Model License:
+* license type:	CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)
+* requirements:	Author must be credited. Commercial use is allowed.
+
+If you use this 3D model in your project be sure to copy paste this credit wherever you share it:
+This work is based on "USS Missouri (BB-63) 1991" (https://sketchfab.com/3d-models/uss-missouri-bb-63-1991-ec23c03e8c4d4e74925117ff88dde598) by 全斗焕 (https://sketchfab.com/lxyun_2) licensed under CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)

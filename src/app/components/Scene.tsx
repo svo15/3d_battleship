@@ -3,8 +3,8 @@
 import { useEffect, useRef} from "react"
 import * as THREE from "three"
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-import { Sky, Water } from "three/examples/jsm/Addons.js";
-import { Grid } from "./classes";
+import { GLTFLoader, Sky, Water } from "three/examples/jsm/Addons.js";
+import { Grid,Cube } from "./classes";
 
 
 export default function Scene(){
@@ -55,12 +55,22 @@ export default function Scene(){
 
         
         const control = new OrbitControls(camera,render.domElement)
-        camera.position.set(0,5,20)
+        camera.position.set(0,5,10)
         control.update()
 
         const grid=new Grid(scene)
         grid.gridGroup.rotation.x=Math.PI*0.5
         scene.add(grid.gridGroup)
+
+        const gltfloader=new GLTFLoader()
+
+        gltfloader.load('/3dmodels/ship/scene.gltf',(gltf)=>{
+            const root =gltf.scene
+            root.scale.set(100,100,100)
+            root.position.set(0,0.5,0)
+            root.userData.draggable=true
+            scene.add(root)
+        })
 
         
         function createWater(){
@@ -132,16 +142,8 @@ export default function Scene(){
 
 		}
 
-        const size=1
-        const geometry= new THREE.BoxGeometry(size,size,size)
-        const material= new THREE.MeshBasicMaterial({color:"white"})
-        const box =new THREE.Mesh(geometry,material)
-        box.userData.draggable=true
-        box.position.set(size,size/2+0.5,0)
-        scene.add(box)
-
-        
-
+        // const box=new Cube()
+        // scene.add(box)
 
         const raycaster = new THREE.Raycaster()
         const Mouse = new THREE.Vector2() 
@@ -198,7 +200,7 @@ export default function Scene(){
             
             control.update()
             water.material.uniforms[ 'time' ].value += 1.0 / 600.0;
-            objectMove()
+            objectMove();
             updateSun();
             parameters.azimuth+=10.0/60.0
             render.render(scene,camera);

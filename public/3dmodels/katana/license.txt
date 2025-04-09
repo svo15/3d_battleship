@@ -1,0 +1,11 @@
+Model Information:
+* title:	Katana
+* source:	https://sketchfab.com/3d-models/katana-6270bc1dff604281b6f66ea588e7da17
+* author:	KangaroOz 3D (https://sketchfab.com/KangaroOz-3D)
+
+Model License:
+* license type:	CC-BY-NC-4.0 (http://creativecommons.org/licenses/by-nc/4.0/)
+* requirements:	Author must be credited. No commercial use.
+
+If you use this 3D model in your project be sure to copy paste this credit wherever you share it:
+This work is based on "Katana" (https://sketchfab.com/3d-models/katana-6270bc1dff604281b6f66ea588e7da17) by KangaroOz 3D (https://sketchfab.com/KangaroOz-3D) licensed under CC-BY-NC-4.0 (http://creativecommons.org/licenses/by-nc/4.0/)
