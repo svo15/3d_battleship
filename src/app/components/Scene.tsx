@@ -3,8 +3,9 @@
 import { useEffect, useRef} from "react"
 import * as THREE from "three"
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-import { GLTFLoader, Sky, Water } from "three/examples/jsm/Addons.js";
+import { DragControls, GLTFLoader, Sky, Water } from "three/examples/jsm/Addons.js";
 import { Grid,Cube } from "./classes";
+import { isAssetError } from "next/dist/client/route-loader";
 
 
 export default function Scene(){
@@ -62,15 +63,7 @@ export default function Scene(){
         grid.gridGroup.rotation.x=Math.PI*0.5
         scene.add(grid.gridGroup)
 
-        const gltfloader=new GLTFLoader()
-
-        gltfloader.load('/3dmodels/ship/scene.gltf',(gltf)=>{
-            const root =gltf.scene
-            root.scale.set(100,100,100)
-            root.position.set(0,0.5,0)
-            root.userData.draggable=true
-            scene.add(root)
-        })
+    
 
         
         function createWater(){
@@ -142,8 +135,6 @@ export default function Scene(){
 
 		}
 
-        // const box=new Cube()
-        // scene.add(box)
 
         const raycaster = new THREE.Raycaster()
         const Mouse = new THREE.Vector2() 
@@ -151,10 +142,23 @@ export default function Scene(){
         const MoveMouse=new THREE.Vector2
 
         let draggable:THREE.Object3D
+
+        const gltfloader=new GLTFLoader()
+
+        let root:any;
+
+        gltfloader.load('/3dmodels/ship/scene.gltf',(gltf)=>{
+            root=gltf.scene
+            root.scale.set(10,10,10)
+            root.position.set(0,0.5,0)
+            root.userData.draggable=true
+            scene.add(root) 
+        })
+
+
         
         window.addEventListener("click",event=>{
             if (draggable) {
-                console.log(draggable.position)
                 draggable=null as any
                 
                 return;
@@ -163,11 +167,20 @@ export default function Scene(){
             Mouse.y=-(event.clientY/window.innerHeight)*2+1
             
             raycaster.setFromCamera(Mouse,camera)
-            const insersects=raycaster.intersectObjects(scene.children)
+            const intersects=raycaster.intersectObjects(scene.children,true)
 
-            if (insersects.length>0&&insersects[0].object.userData.draggable) {
-                draggable=insersects[0].object
-                console.log(insersects[0].object.position)
+
+            if (intersects.length > 0) {
+                let selectedObject = intersects[0].object;
+        
+                // Check if the object is part of a group
+                while (selectedObject.parent && !(selectedObject.parent instanceof THREE.Scene)) {
+                    selectedObject = selectedObject.parent; // Move up the hierarchy to find the group
+                }
+        
+                if (selectedObject.userData.draggable) {
+                    draggable = selectedObject;
+                }
             }
             
 
@@ -181,7 +194,7 @@ export default function Scene(){
         function objectMove(){
             if (draggable!=null) {
                 raycaster.setFromCamera(MoveMouse,camera)
-                const intersect =raycaster.intersectObjects(scene.children)
+                const intersect =raycaster.intersectObjects(scene.children,true)
                 if (intersect.length>0) {
                     for(let o of intersect){
                         if (o.object.userData.water) {

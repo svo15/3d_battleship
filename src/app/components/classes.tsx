@@ -6,15 +6,15 @@ export class Grid{
     cellSize:number
     cells:any
     gridGroup:THREE.Group<THREE.Object3DEventMap>
-    constructor(scene: any,Gridsize=14,cellSize=1){
+    constructor(scene: any,cellSize=1,Gridsize=14){
         this.scene=scene;
         this.Gridsize=Gridsize;
         this.cellSize=cellSize;
         this.cells=[]
         this.gridGroup=new THREE.Group()
         this.initGrid();
-        this.gridGroup.userData.grid=true
         this.scene.add(this.gridGroup)
+
 
     }
     initGrid(){
